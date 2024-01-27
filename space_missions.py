@@ -81,6 +81,9 @@ for i, launch_location in enumerate(launch_locations_count['Location']):
 launch_locations_count.dropna(subset=["Location", "count", "Lat", "Long"], inplace=True)
 
 # %% space_missions_eda.ipynb 27
+st.title("Markers on world map for each location")
+
+# %% space_missions_eda.ipynb 28
 # create markers on world map for each location. 
 world_map = folium.Map(location=[0,0], zoom_start=2)
 
@@ -93,8 +96,5 @@ for i,location in launch_locations_count.iterrows():
     ).add_to(world_map)
 
 
-# %% space_missions_eda.ipynb 28
-st_folium(world_map, width="100%")
-
 # %% space_missions_eda.ipynb 29
-st.dataframe(space_missions_df)
+st_folium(world_map, width="100%")
