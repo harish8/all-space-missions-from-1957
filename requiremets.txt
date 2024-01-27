@@ -1,0 +1,10 @@
+folium
+matplotlib
+geocoder==1.38.1
+geopy
+nbdev==2.3.13
+pandas==2.0.3
+seaborn==0.12.2
+streamlit==1.29.0
+streamlit-folium==0.18.0
+streamlit-jupyter==0.2.1
