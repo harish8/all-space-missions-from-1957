@@ -3,18 +3,18 @@
 # %% auto 0
 __all__ = []
 
-# %% space_missions_eda.ipynb 1
+# %% space_missions_eda.ipynb 0
 import streamlit as st
- 
-#from streamlit_jupyter import StreamlitPatcher, tqdm
-#StreamlitPatcher().jupyter() # register streamlit with jupyter-compatible wrappers
+
+from streamlit_jupyter import StreamlitPatcher, tqdm
+StreamlitPatcher().jupyter() # register streamlit with jupyter-compatible wrappers
 
 from streamlit_folium import st_folium
 
-# %% space_missions_eda.ipynb 3
+# %% space_missions_eda.ipynb 2
 st.title("All space missions from 1957")
 
-# %% space_missions_eda.ipynb 4
+# %% space_missions_eda.ipynb 3
 # import necessary packages. 
 import pandas as pd
 import seaborn as sns
@@ -23,27 +23,49 @@ import folium
 from geopy.geocoders import Nominatim
 import geocoder
 
-# %% space_missions_eda.ipynb 5
-# fetch the data from csv file and store it in a variable. 
+import io
+
+# %% space_missions_eda.ipynb 4
+st.markdown(f' # Fetch the data from csv file and store it in a variable.')
 space_missions_df = pd.read_csv('./Space_Corrected.csv', index_col=0)
 
-# %% space_missions_eda.ipynb 6
-# Rename the columns named `Unnamed: 0` to `index` 
+# %% space_missions_eda.ipynb 5
+st.markdown(f' ## Rename the columns named `Unnamed: 0` to `index` ')
 space_missions_df = space_missions_df.rename(columns={"Unnamed: 0" : "index", "Company Name": "company_name", "Status Rocket":"status_rocket"," Rocket": "Rocket", "Status Mission": "status_mission"})
 
-# %% space_missions_eda.ipynb 9
-# find if there's missing values. 
-space_missions_df[space_missions_df.isna().any(axis=1)]
+# %% space_missions_eda.ipynb 6
+st.markdown(f' ## Explore the structure of the dataset ')
 
-# %% space_missions_eda.ipynb 12
-# fill nan with default 0.0 in the column Rocket
+buffer = io.StringIO()
+space_missions_df.info(buf=buffer)
+df_space_missions_info = buffer.getvalue()
+
+st.text(df_space_missions_info)
+
+# %% space_missions_eda.ipynb 7
+st.write(space_missions_df.describe())
+
+# %% space_missions_eda.ipynb 8
+st.markdown(f' ### check if there is any null or nan columns.')
+st.write(space_missions_df.isna().any())
+
+# %% space_missions_eda.ipynb 9
+st.markdown(f' ## Explore what are the missing values in the `Rocket` column.')
+st.dataframe(space_missions_df[space_missions_df.isna().any(axis=1)])
+
+# %% space_missions_eda.ipynb 11
+st.markdown(f' ### Fill nan with default `0.0` in the column `Rocket`')
 space_missions_df['Rocket'].fillna(0.0, inplace=True)
 
-# %% space_missions_eda.ipynb 13
-# check for duplicated rows from Data frame.
-space_missions_df.duplicated().sum()
+# %% space_missions_eda.ipynb 12
+st.markdown(''' 
+### Check if there's any duplicated rows. 
 
-# %% space_missions_eda.ipynb 14
+duplicated rows from Data frame. 
+''')
+st.write(space_missions_df.duplicated().sum())
+
+# %% space_missions_eda.ipynb 13
 # create two new columns seperating Datum to Date and time.
 #create a new column time_zone and store those values in it.
 space_missions_df['time_zone'] = space_missions_df['Datum'].str.split(' ').str[5]
@@ -59,42 +81,61 @@ space_missions_df['date']  = space_missions_df['date_um'].dt.date
 space_missions_df['time']  = space_missions_df['date_um'].dt.time
 
 
-# %% space_missions_eda.ipynb 21
+# %% space_missions_eda.ipynb 14
+st.markdown(f' ### Lets re-explore the dataframe with no null values and columns ')
+st.dataframe(space_missions_df.head(10))
+
+# %% space_missions_eda.ipynb 16
+# all_companies = pd.Series(space_missions_df['Company Name']).value_counts()
+st.markdown(f' ### All the list of unique company names and the count of space misisons')
+st.write(space_missions_df['company_name'].value_counts())
+
+# %% space_missions_eda.ipynb 17
+#with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+st.dataframe(space_missions_df.groupby(['company_name', 'Location','Detail']).company_name.agg(['count']))
+
+# %% space_missions_eda.ipynb 20
+st.markdown(f' ### How many unique launch Locations are present in the dataframe. ')
 launch_locations_count = space_missions_df['Location'].value_counts().reset_index()
 
+# %% space_missions_eda.ipynb 21
+st.dataframe(launch_locations_count)
+
+# %% space_missions_eda.ipynb 23
+st.markdown('''
+# *** disabled displaying the world map with launch locations temporarily since the loading time is too slow. ***
+''')
+
+# for i, launch_location in enumerate(launch_locations_count['Location']):
+#     split_location_list = launch_location.split(",", 1)
+#     # location_coordinates = split_location_list
+#     if(len(split_location_list) > 1):
+#           location_name = launch_location.split(",", 1)[1]
+#           g = geocoder.osm(location_name)
+#           if(g.ok):
+#                  launch_locations_count.loc[i, 'Location'] = location_name
+#                  launch_locations_count.loc[i, 'Lat'] = g.lat
+#                  launch_locations_count.loc[i , 'Long'] = g.lng
+
 # %% space_missions_eda.ipynb 24
-for i, launch_location in enumerate(launch_locations_count['Location']):
-    split_location_list = launch_location.split(",", 1)
-    # location_coordinates = split_location_list
-    if(len(split_location_list) > 1):
-          location_name = launch_location.split(",", 1)[1]
-          g = geocoder.osm(location_name)
-          if(g.ok):
-                 launch_locations_count.loc[i, 'Location'] = location_name
-                 launch_locations_count.loc[i, 'Lat'] = g.lat
-                 launch_locations_count.loc[i , 'Long'] = g.lng
-
-# %% space_missions_eda.ipynb 25
-# launch_locations_df = pd.DataFrame[launch_locations_count]
-
 # Drop NaN from launch_locations_count
-launch_locations_count.dropna(subset=["Location", "count", "Lat", "Long"], inplace=True)
+# launch_locations_count.dropna(subset=["Location", "count", "Lat", "Long"], inplace=True)
+
+# %% space_missions_eda.ipynb 26
+# st.title("Markers on world map for each location")
 
 # %% space_missions_eda.ipynb 27
-st.title("Markers on world map for each location")
+# create markers on world map for each location. 
+# world_map = folium.Map(location=[0,0], zoom_start=2)
+
+# for i,location in launch_locations_count.iterrows():
+#     folium.Marker(
+#         location=[location["Lat"], location["Long"]],
+#         popup=f"Location: {location['Location']}<br>Count: {location['count']}",
+#         icon=folium.Icon(icon="shuttle-space", prefix='fa',
+#                          max_width=100)
+#     ).add_to(world_map)
+
 
 # %% space_missions_eda.ipynb 28
-# create markers on world map for each location. 
-world_map = folium.Map(location=[0,0], zoom_start=2)
-
-for i,location in launch_locations_count.iterrows():
-    folium.Marker(
-        location=[location["Lat"], location["Long"]],
-        popup=f"Location: {location['Location']}<br>Count: {location['count']}",
-        icon=folium.Icon(icon="shuttle-space", prefix='fa',
-                         max_width=100)
-    ).add_to(world_map)
-
-
-# %% space_missions_eda.ipynb 29
-st_folium(world_map, width="100%")
+# st_folium(world_map, width="100%")
